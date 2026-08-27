@@ -149,7 +149,7 @@ app.use(helmet({
         "'self'", 
         process.env.CLIENT_URL || 'http://localhost:5173',
         'https://anti-akinator-silk.vercel.app',
-        'https://anti-akinator.vercel.app',
+        'https://antiakinator-two.vercel.app',
         'https://anti-akinator.in',
         'https://www.anti-akinator.in' 
       ],
