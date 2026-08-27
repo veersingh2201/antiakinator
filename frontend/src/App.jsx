@@ -76,17 +76,32 @@ const AppContent = () => {
       return;
     }
 
-    // ✅ FIX: Use the same URL for socket connections
-    const socketUrl = import.meta.env.VITE_API_URL || 'https://antiakinator.onrender.com';
+    // ✅ FIX 1: Get the base URL without trailing slashes
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://antiakinator.onrender.com';
+    // Remove trailing slash if exists
+    const socketUrl = baseUrl.replace(/\/$/, '');
+    
+    console.log('🔌 Connecting to socket at:', socketUrl);
+
+    // ✅ FIX 2: Better socket configuration
     const socket = io(socketUrl, {
+      path: '/socket.io',
+      transports: ['websocket', 'polling'],
       withCredentials: true,
-      transports: ['websocket', 'polling']
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
+      // ✅ Fix for "Invalid namespace" error
+      forceNew: true,
+      multiplex: false
     });
 
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      console.log('🔌 Socket connected successfully');
+      console.log('🔌 Socket connected successfully with ID:', socket.id);
       socket.emit('register-user', { userId: userId });
     });
 
@@ -110,17 +125,25 @@ const AppContent = () => {
       }
     });
 
-    socket.on('disconnect', () => {
-      console.log('🔌 Socket disconnected');
+    socket.on('disconnect', (reason) => {
+      console.log('🔌 Socket disconnected:', reason);
     });
 
     socket.on('connect_error', (error) => {
       console.error('❌ Socket connection error:', error);
+      // ✅ Try polling fallback on connection error
+      if (socket.io.opts.transports[0] === 'websocket') {
+        console.log('🔄 Falling back to polling transport');
+        socket.io.opts.transports = ['polling', 'websocket'];
+        socket.connect();
+      }
     });
 
     return () => {
       if (socketRef.current) {
+        console.log('🔌 Cleaning up socket connection');
         socketRef.current.disconnect();
+        socketRef.current = null;
       }
     };
   }, [isAuthenticated, user]);

@@ -54,7 +54,6 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setAuthError(null);
       setSessionExpiry(null);
-      
     }
   }, []);
 
@@ -98,19 +97,17 @@ export const AuthProvider = ({ children }) => {
     fetchUserRef.current = true;
 
     try {
+      console.log('🔍 Fetching user data from:', api.defaults.baseURL + '/auth/me');
       const response = await api.get('/auth/me');
       const userData = response.data.user;
       
-      // ✅ Ensure user has _id (for payment system)
       if (userData) {
         if (!userData._id && userData.id) {
           userData._id = userData.id;
         }
-        // Ensure shards field exists
         if (userData.shards === undefined) {
           userData.shards = 0;
         }
-        // Ensure seasonPass field exists
         if (!userData.seasonPass) {
           userData.seasonPass = {
             active: false,
@@ -119,7 +116,6 @@ export const AuthProvider = ({ children }) => {
             progress: 0
           };
         }
-        // Ensure transactionHistory exists
         if (!userData.transactionHistory) {
           userData.transactionHistory = [];
         }
@@ -129,11 +125,11 @@ export const AuthProvider = ({ children }) => {
       setAuthError(null);
       resetSessionTimer();
       
-      // ✅ Store in localStorage with all fields
       localStorage.setItem('user', JSON.stringify(userData));
       
       return userData;
     } catch (error) {
+      console.error('❌ Fetch user error:', error);
       if (error.response?.status === 401) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -169,24 +165,25 @@ export const AuthProvider = ({ children }) => {
     if (initialFetchDone.current) return;
     initialFetchDone.current = true;
     
-    // ✅ Try to restore user from localStorage
     const storedUser = localStorage.getItem('user');
     if (storedUser && !user) {
       try {
         const parsedUser = JSON.parse(storedUser);
-        // Ensure _id exists
         if (parsedUser && !parsedUser._id && parsedUser.id) {
           parsedUser._id = parsedUser.id;
         }
         setUser(parsedUser);
       } catch (e) {
+        console.error('Error parsing stored user:', e);
       }
     }
     
     if (token) {
+      console.log('🔑 Token found, setting auth header');
       setAuthHeader(token);
       fetchUser();
     } else {
+      console.log('🔑 No token found');
       setLoading(false);
     }
   }, [token, setAuthHeader, fetchUser]);
@@ -205,6 +202,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
+      console.log('🔑 Logging in to:', api.defaults.baseURL + '/auth/login');
       const response = await api.post('/auth/login', { 
         email: email.trim().toLowerCase(), 
         password: password.trim() 
@@ -228,7 +226,6 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Invalid response from server');
       }
       
-      // ✅ Ensure user has _id and all required fields
       if (user) {
         if (!user._id && user.id) {
           user._id = user.id;
@@ -259,12 +256,12 @@ export const AuthProvider = ({ children }) => {
       
       fetchUserRef.current = false;
       
-      
       return { 
         success: true,
         user: user
       };
     } catch (error) {
+      console.error('❌ Login error:', error);
       
       let message = 'Login failed. Please try again.';
       
@@ -369,11 +366,10 @@ export const AuthProvider = ({ children }) => {
 
     if (referralCode && referralCode.trim() !== '' && referralCode !== 'undefined') {
       requestData.referralCode = referralCode.trim().toUpperCase();
-    } else {
     }
 
-
     try {
+      console.log('📝 Registering to:', api.defaults.baseURL + '/auth/register');
       const response = await api.post('/auth/register', requestData);
       
       const data = response.data;
@@ -394,7 +390,6 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Invalid response from server');
       }
       
-      // ✅ Ensure user has _id and all required fields
       if (user) {
         if (!user._id && user.id) {
           user._id = user.id;
@@ -425,13 +420,13 @@ export const AuthProvider = ({ children }) => {
       
       fetchUserRef.current = false;
       
-      
       return {
         success: true,
         user: user,
         message: data.message
       };
     } catch (error) {
+      console.error('❌ Registration error:', error);
       
       let message = 'Registration failed. Please try again.';
       
@@ -481,7 +476,6 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Invalid response from server');
       }
       
-      // ✅ Ensure user has _id and all required fields
       if (user) {
         if (!user._id && user.id) {
           user._id = user.id;
@@ -512,14 +506,12 @@ export const AuthProvider = ({ children }) => {
       
       fetchUserRef.current = false;
       
-      
       return {
         success: true,
         user: user,
         message: response.data.message
       };
     } catch (error) {
-      
       let message = 'Failed to verify OTP. Please try again.';
       
       if (error.response) {
@@ -564,7 +556,6 @@ export const AuthProvider = ({ children }) => {
         message: response.data.message || 'New OTP sent to your email'
       };
     } catch (error) {
-      
       let message = 'Failed to resend OTP. Please try again.';
       
       if (error.response) {

@@ -1,5 +1,9 @@
+// frontend/src/api/axios.js
 import axios from 'axios';
 
+// ===== FIX: Use the API URL with /api included =====
+// VITE_API_URL should be the full base URL including /api
+// Example: https://antiakinator.onrender.com/api
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // ===== CSRF TOKEN HELPER =====
@@ -45,7 +49,6 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-    } else {
     }
 
     // ===== Add CSRF token =====
@@ -67,13 +70,6 @@ api.interceptors.request.use(
       };
     }
 
-    // ===== Log request data for debugging =====
-    const sanitizedUrl = config.url?.replace(/\/[0-9a-f]{24}\b/g, '/:id');
-    if (config.data) {
-    }
-    if (config.params) {
-    }
-
     return config;
   },
   (error) => {
@@ -84,9 +80,6 @@ api.interceptors.request.use(
 // ===== RESPONSE INTERCEPTOR =====
 api.interceptors.response.use(
   (response) => {
-    const sanitizedUrl = response.config.url?.replace(/\/[0-9a-f]{24}\b/g, '/:id');
-    if (response.data) {
-    }
     return response;
   },
   (error) => {
@@ -106,33 +99,23 @@ api.interceptors.response.use(
       });
     }
 
-    // ===== Detailed error logging =====
-
     // ===== 401 Unauthorized =====
     if (error.response?.status === 401) {
-      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+      // Don't redirect on login/register pages
+      if (!window.location.pathname.includes('/login') && 
+          !window.location.pathname.includes('/register') &&
+          !window.location.pathname.includes('/verify-otp')) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         delete api.defaults.headers.common['Authorization'];
-      }
-    }
-
-    // ===== 403 Forbidden =====
-    if (error.response?.status === 403) {
-    }
-
-    // ===== 400 Bad Request - Show validation errors =====
-    if (error.response?.status === 400) {
-      if (error.response?.data?.errors) {
+        // Optional: redirect to login
+        // window.location.href = '/login';
       }
     }
 
     // ===== 429 Rate Limiting =====
     if (error.response?.status === 429) {
-    }
-
-    // ===== 500 Server Error =====
-    if (error.response?.status >= 500) {
+      console.warn('⏰ Rate limit exceeded:', error.response?.data?.message);
     }
 
     // ===== Sanitize error =====
@@ -169,7 +152,7 @@ api.isSecure = () => {
   return isSecureConnection();
 };
 
-// ===== GET USER INFO (for debugging) =====
+// ===== GET USER INFO =====
 api.getCurrentUser = () => {
   try {
     const user = localStorage.getItem('user');
@@ -179,10 +162,9 @@ api.getCurrentUser = () => {
   }
 };
 
-// ===== GET TOKEN (for debugging) =====
+// ===== GET TOKEN =====
 api.getToken = () => {
   return localStorage.getItem('token');
 };
-
 
 export default api;
