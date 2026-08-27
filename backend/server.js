@@ -708,19 +708,7 @@ io.on('connection', (socket) => {
     console.log(`🔌 Socket disconnected: ${socket.id}`);
   });
 });
-const cors = require('cors');
 
-// Allow all origins (for development)
-app.use(cors());
-
-// OR allow specific origins (for production)
-app.use(cors({
-    origin: [
-        'https://antiakinator.vercel.app',
-        'http://localhost:5173' // for local development
-    ],
-    credentials: true
-}));
 // ============================================================
 // 🚀 ROUTES (ALL WORKING)
 // ============================================================
