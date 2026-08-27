@@ -1,0 +1,818 @@
+// /backend/controllers/seasonPassController.js
+const SeasonPass = require('../models/SeasonPass');
+const SeasonPassTier = require('../models/SeasonPassTier');
+const User = require('../models/User');
+const Character = require('../models/Character');
+const Title = require('../models/Title');
+const Banner = require('../models/Banner');
+const ProfilePhoto = require('../models/ProfilePhoto');
+const ProfileBackground = require('../models/ProfileBackground');
+const Notification = require('../models/Notification');
+
+// ============================================================
+// ✅ HELPER: Get reward preview image (UPDATED)
+// ============================================================
+async function getRewardPreviewImage(reward) {
+  try {
+    if (!reward) return null;
+    
+    // If reward already has an image URL directly
+    if (reward.imageUrl) {
+      return reward.imageUrl;
+    }
+    
+    // If reward has itemId - fetch from database
+    if (reward.itemId) {
+      // For cards - get character image
+      if (reward.type === 'card') {
+        const character = await Character.findById(reward.itemId);
+        if (character && character.image) {
+          return character.image;
+        }
+      }
+      
+      // For banners - get GIF/thumbnail
+      if (reward.type === 'banner') {
+        const banner = await Banner.findById(reward.itemId);
+        if (banner) {
+          return banner.gifUrl || banner.thumbnailUrl || null;
+        }
+      }
+      
+      // For profile photos - get image URL
+      if (reward.type === 'profilePhoto') {
+        const photo = await ProfilePhoto.findById(reward.itemId);
+        if (photo && photo.imageUrl) {
+          return photo.imageUrl;
+        }
+      }
+      
+      // For profile backgrounds - get image URL
+      if (reward.type === 'profileBackground') {
+        const background = await ProfileBackground.findById(reward.itemId);
+        if (background && background.imageUrl) {
+          return background.imageUrl || background.thumbnailUrl || null;
+        }
+      }
+    }
+    
+    // ✅ NEW: If only itemName exists (fallback for cases where itemId is missing)
+    if (reward.itemName) {
+      // For cards - try to find character by name
+      if (reward.type === 'card') {
+        const character = await Character.findOne({ 
+          name: { $regex: new RegExp(`^${reward.itemName}$`, 'i') } 
+        });
+        if (character && character.image) {
+          return character.image;
+        }
+      }
+      
+      // For banners - try to find banner by name
+      if (reward.type === 'banner') {
+        const banner = await Banner.findOne({ 
+          name: { $regex: new RegExp(`^${reward.itemName}$`, 'i') } 
+        });
+        if (banner) {
+          return banner.gifUrl || banner.thumbnailUrl || null;
+        }
+      }
+      
+      // For profile photos - try to find by name
+      if (reward.type === 'profilePhoto') {
+        const photo = await ProfilePhoto.findOne({ 
+          name: { $regex: new RegExp(`^${reward.itemName}$`, 'i') } 
+        });
+        if (photo && photo.imageUrl) {
+          return photo.imageUrl;
+        }
+      }
+      
+      // For profile backgrounds - try to find by name
+      if (reward.type === 'profileBackground') {
+        const background = await ProfileBackground.findOne({ 
+          name: { $regex: new RegExp(`^${reward.itemName}$`, 'i') } 
+        });
+        if (background && background.imageUrl) {
+          return background.imageUrl || background.thumbnailUrl || null;
+        }
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    return null;
+  }
+}
+
+// ============================================================
+// ✅ GET ACTIVE SEASON PASS (FIXED - Auto-assigns seasonId)
+// ============================================================
+exports.getActiveSeason = async (req, res) => {
+  try {
+    const season = await SeasonPass.getActiveSeason();
+    
+    if (!season) {
+      return res.json({
+        success: true,
+        hasActiveSeason: false,
+        message: 'No active season pass available'
+      });
+    }
+
+    // Get user's progress for this season
+    const user = await User.findById(req.user._id);
+    const userProgress = user.seasonPass || {};
+
+    // ✅ FIX: If user has seasonPass.active = true but no seasonId, auto-assign
+    if (userProgress.active === true && !userProgress.seasonId) {
+      userProgress.seasonId = season._id;
+      user.seasonPass.seasonId = season._id;
+      await user.save();
+    }
+
+    // ✅ Only get tiers up to totalTiers
+    const tiers = await SeasonPassTier.find({ 
+      seasonId: season._id,
+      tier: { $lte: season.totalTiers }
+    }).sort({ tier: 1 });
+
+    // Get unlocked tiers for this user
+    const unlockedTiers = userProgress.unlockedTiers || [];
+    const claimedRewards = userProgress.claimedRewards || [];
+
+    // Build tier progress with preview images
+    const tierProgress = await Promise.all(tiers.map(async (tier) => {
+      const isUnlocked = unlockedTiers.some(t => t.tier === tier.tier);
+      
+      // Process rewards with preview images
+      const rewards = await Promise.all(tier.rewards.map(async (reward, index) => {
+        const isClaimed = claimedRewards.some(
+          r => r.tier === tier.tier && r.rewardIndex === index
+        );
+        
+        // Get preview image
+        const previewImage = await getRewardPreviewImage(reward);
+        
+        return {
+          ...reward.toObject(),
+          isClaimed,
+          previewImage // ✅ Add preview image to response
+        };
+      }));
+
+      return {
+        tier: tier.tier,
+        isUnlocked,
+        rewards,
+        hasUnclaimedRewards: rewards.some(r => !r.isClaimed)
+      };
+    }));
+
+    res.json({
+      success: true,
+      hasActiveSeason: true,
+      season: {
+        id: season._id,
+        seasonNumber: season.seasonNumber,
+        seasonName: season.seasonName,
+        description: season.description,
+        startDate: season.startDate,
+        endDate: season.endDate,
+        totalTiers: season.totalTiers,
+        correctGuessesPerTier: season.correctGuessesPerTier,
+        timeRemaining: season.getTimeRemainingFormatted(),
+        isActive: season.isActiveSeason()
+      },
+      progress: {
+        currentTier: userProgress.currentTier || 1,
+        correctGuesses: userProgress.correctGuesses || 0,
+        progress: userProgress.progress || 0,
+        isCompleted: userProgress.isCompleted || false,
+        completedAt: userProgress.completedAt || null,
+        joinedAt: userProgress.joinedAt || null,
+        active: userProgress.active || false
+      },
+      tiers: tierProgress,
+      unlockedTierCount: unlockedTiers.length,
+      totalTiers: season.totalTiers
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get active season: ' + error.message
+    });
+  }
+};
+
+// ============================================================
+// ✅ GET USER PROGRESS
+// ============================================================
+exports.getUserProgress = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id)
+      .populate('seasonPass.seasonId');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const seasonPass = user.seasonPass;
+    
+    if (!seasonPass || !seasonPass.seasonId) {
+      return res.json({
+        success: true,
+        hasProgress: false,
+        message: 'No season pass progress found'
+      });
+    }
+
+    const season = seasonPass.seasonId;
+    const unlockedTiers = seasonPass.unlockedTiers || [];
+    const claimedRewards = seasonPass.claimedRewards || [];
+
+    const tiers = await SeasonPassTier.find({ 
+      seasonId: season._id,
+      tier: { $lte: season.totalTiers }
+    }).sort({ tier: 1 });
+
+    // Build tier progress with preview images
+    const tierProgress = await Promise.all(tiers.map(async (tier) => {
+      const isUnlocked = unlockedTiers.some(t => t.tier === tier.tier);
+      
+      const rewards = await Promise.all(tier.rewards.map(async (reward, index) => {
+        const isClaimed = claimedRewards.some(
+          r => r.tier === tier.tier && r.rewardIndex === index
+        );
+        
+        const previewImage = await getRewardPreviewImage(reward);
+        
+        return {
+          ...reward.toObject(),
+          isClaimed,
+          previewImage
+        };
+      }));
+
+      return {
+        tier: tier.tier,
+        isUnlocked,
+        rewards,
+        hasUnclaimedRewards: rewards.some(r => !r.isClaimed)
+      };
+    }));
+
+    res.json({
+      success: true,
+      hasProgress: true,
+      season: {
+        id: season._id,
+        seasonNumber: season.seasonNumber,
+        seasonName: season.seasonName,
+        totalTiers: season.totalTiers,
+        correctGuessesPerTier: season.correctGuessesPerTier,
+        endDate: season.endDate,
+        timeRemaining: season.getTimeRemainingFormatted()
+      },
+      progress: {
+        currentTier: seasonPass.currentTier || 1,
+        correctGuesses: seasonPass.correctGuesses || 0,
+        progress: seasonPass.progress || 0,
+        isCompleted: seasonPass.isCompleted || false,
+        completedAt: seasonPass.completedAt || null,
+        joinedAt: seasonPass.joinedAt || null,
+        active: seasonPass.active || false
+      },
+      tiers: tierProgress,
+      unlockedTierCount: unlockedTiers.length,
+      totalTiers: season.totalTiers
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get user progress: ' + error.message
+    });
+  }
+};
+
+// ============================================================
+// ✅ CLAIM TIER REWARD (FIXED - Uses active flag instead of seasonId)
+// ============================================================
+exports.claimTierReward = async (req, res) => {
+  try {
+    const { tier } = req.params;
+    const { rewardIndex } = req.body;
+    const userId = req.user._id;
+
+    // Validate rewardIndex
+    if (rewardIndex === undefined || rewardIndex === null) {
+      return res.status(400).json({
+        success: false,
+        message: 'rewardIndex is required'
+      });
+    }
+
+    // Get user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+
+    // ✅ FIX: Check if user has season pass and it's active
+    if (!user.seasonPass || !user.seasonPass.active) {
+      return res.status(400).json({
+        success: false,
+        message: 'You have not purchased the season pass. Please buy it first.'
+      });
+    }
+
+    // ✅ If seasonId is missing, try to find the active season
+    let seasonId = user.seasonPass.seasonId;
+    if (!seasonId) {
+      const activeSeason = await SeasonPass.getActiveSeason();
+      if (activeSeason) {
+        seasonId = activeSeason._id;
+        // Save it back to user for future use
+        user.seasonPass.seasonId = seasonId;
+        await user.save();
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: 'No active season available. Please try again later.'
+        });
+      }
+    }
+
+    // Get the season
+    const season = await SeasonPass.findById(seasonId);
+    if (!season) {
+      return res.status(404).json({
+        success: false,
+        message: 'Season not found'
+      });
+    }
+
+
+    // Check if season is active
+    if (!season.isActiveSeason()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Season is not active'
+      });
+    }
+
+    // Check if tier is within valid range
+    const tierNum = parseInt(tier);
+    if (tierNum > season.totalTiers) {
+      return res.status(400).json({
+        success: false,
+        message: `Tier ${tierNum} does not exist. Max tier is ${season.totalTiers}`
+      });
+    }
+
+    // Check if tier is unlocked
+    const unlockedTiers = user.seasonPass.unlockedTiers || [];
+    const isUnlocked = unlockedTiers.some(t => t.tier === tierNum);
+
+    if (!isUnlocked) {
+      return res.status(400).json({
+        success: false,
+        message: `Tier ${tierNum} is not unlocked yet. You need to earn ${season.correctGuessesPerTier * tierNum} correct guesses to unlock this tier.`
+      });
+    }
+
+    // Check if already claimed
+    const claimedRewards = user.seasonPass.claimedRewards || [];
+    const alreadyClaimed = claimedRewards.some(
+      r => r.tier === tierNum && r.rewardIndex === rewardIndex
+    );
+
+    if (alreadyClaimed) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reward already claimed'
+      });
+    }
+
+    // Get tier data
+    const tierData = await SeasonPassTier.findOne({
+      seasonId: season._id,
+      tier: tierNum
+    });
+
+    if (!tierData) {
+      return res.status(404).json({
+        success: false,
+        message: 'Tier not found'
+      });
+    }
+
+
+    // Check if reward index is valid
+    if (rewardIndex >= tierData.rewards.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid reward index'
+      });
+    }
+
+    const reward = tierData.rewards[rewardIndex];
+
+    // Claim reward
+    let rewardResult = null;
+    try {
+      rewardResult = await claimReward(user, reward);
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message
+      });
+    }
+
+    // Mark as claimed
+    if (!user.seasonPass.claimedRewards) {
+      user.seasonPass.claimedRewards = [];
+    }
+    user.seasonPass.claimedRewards.push({
+      tier: tierNum,
+      rewardIndex: rewardIndex,
+      claimedAt: new Date()
+    });
+
+    await user.save();
+
+    // Create notification
+    try {
+      await Notification.createNotification({
+        userId: user._id,
+        type: 'system',
+        title: '🎁 Season Pass Reward Claimed!',
+        message: `You claimed ${reward.itemName || reward.type} from Tier ${tier}!`,
+        icon: '🎁',
+        color: 'gold',
+        priority: 'high'
+      });
+    } catch (notifError) {
+    }
+
+
+
+    res.json({
+      success: true,
+      message: `Reward claimed successfully!`,
+      reward: rewardResult,
+      claimedRewards: user.seasonPass.claimedRewards
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to claim reward: ' + error.message
+    });
+  }
+};
+
+// ============================================================
+// ✅ HELPER: Claim Reward
+// ============================================================
+async function claimReward(user, reward) {
+  switch (reward.type) {
+    case 'shards':
+      user.shards = (user.shards || 0) + (reward.amount || 0);
+      await user.save();
+      return {
+        type: 'shards',
+        amount: reward.amount,
+        message: `+${reward.amount} Shards`
+      };
+
+    case 'gems':
+      user.gems = (user.gems || 0) + (reward.amount || 0);
+      await user.save();
+      return {
+        type: 'gems',
+        amount: reward.amount,
+        message: `+${reward.amount} Gems`
+      };
+
+    case 'card':
+      if (!reward.itemId) {
+        throw new Error('Card ID is required');
+      }
+      const card = await Character.findById(reward.itemId);
+      if (!card) {
+        throw new Error('Card not found');
+      }
+      
+      const cardAdded = user.addCard(card);
+      if (!cardAdded) {
+        user.gems = (user.gems || 0) + 200;
+        await user.save();
+        return {
+          type: 'gems',
+          amount: 200,
+          message: `You already own ${card.name}. Converted to 200 Gems!`
+        };
+      }
+      await user.save();
+      return {
+        type: 'card',
+        card: {
+          id: card._id,
+          name: card.name,
+          rarity: card.rarity,
+          element: card.element,
+          image: card.image,
+          power: card.powerLevel || card.basePower || 25
+        },
+        message: `🃏 ${card.name} added to your collection!`
+      };
+
+    case 'title':
+      if (!reward.itemId) {
+        throw new Error('Title ID is required');
+      }
+      const title = await Title.findById(reward.itemId);
+      if (!title) {
+        throw new Error('Title not found');
+      }
+      
+      const alreadyHasTitle = user.achievements.titles.some(t => 
+        t.titleId.toString() === reward.itemId.toString()
+      );
+      
+      if (alreadyHasTitle) {
+        user.gems = (user.gems || 0) + 100;
+        await user.save();
+        return {
+          type: 'gems',
+          amount: 100,
+          message: `You already have this title. Converted to 100 Gems!`
+        };
+      }
+      
+      user.achievements.titles.push({
+        titleId: reward.itemId,
+        unlockedAt: new Date(),
+        isEquipped: false
+      });
+      await user.save();
+      return {
+        type: 'title',
+        title: {
+          id: title._id,
+          name: title.name,
+          displayName: title.displayName,
+          displayType: title.displayType
+        },
+        message: `🏆 Title "${title.displayName}" added to your collection!`
+      };
+
+    case 'banner':
+      if (!reward.itemId) {
+        throw new Error('Banner ID is required');
+      }
+      const banner = await Banner.findById(reward.itemId);
+      if (!banner) {
+        throw new Error('Banner not found');
+      }
+      
+      const alreadyHasBanner = user.achievements.banners.some(b => 
+        b.bannerId.toString() === reward.itemId.toString()
+      );
+      
+      if (alreadyHasBanner) {
+        user.gems = (user.gems || 0) + 100;
+        await user.save();
+        return {
+          type: 'gems',
+          amount: 100,
+          message: `You already have this banner. Converted to 100 Gems!`
+        };
+      }
+      
+      user.achievements.banners.push({
+        bannerId: reward.itemId,
+        unlockedAt: new Date(),
+        isEquipped: false
+      });
+      await user.save();
+      return {
+        type: 'banner',
+        banner: {
+          id: banner._id,
+          name: banner.name,
+          gifUrl: banner.gifUrl
+        },
+        message: `🎨 Banner "${banner.name}" added to your collection!`
+      };
+
+    case 'profilePhoto':
+      if (!reward.itemId) {
+        throw new Error('Profile Photo ID is required');
+      }
+      const photo = await ProfilePhoto.findById(reward.itemId);
+      if (!photo) {
+        throw new Error('Profile photo not found');
+      }
+      
+      const alreadyHasPhoto = user.achievements.profilePhotos.some(p => 
+        p.photoId.toString() === reward.itemId.toString()
+      );
+      
+      if (alreadyHasPhoto) {
+        user.gems = (user.gems || 0) + 100;
+        await user.save();
+        return {
+          type: 'gems',
+          amount: 100,
+          message: `You already have this profile photo. Converted to 100 Gems!`
+        };
+      }
+      
+      user.achievements.profilePhotos.push({
+        photoId: reward.itemId,
+        unlockedAt: new Date(),
+        isEquipped: false
+      });
+      await user.save();
+      return {
+        type: 'profilePhoto',
+        photo: {
+          id: photo._id,
+          name: photo.name,
+          imageUrl: photo.imageUrl
+        },
+        message: `📸 Profile photo "${photo.name}" added to your collection!`
+      };
+
+    case 'profileBackground':
+      if (!reward.itemId) {
+        throw new Error('Profile Background ID is required');
+      }
+      const background = await ProfileBackground.findById(reward.itemId);
+      if (!background) {
+        throw new Error('Profile background not found');
+      }
+      
+      const alreadyHasBg = user.achievements.profileBackgrounds.some(b => 
+        b.backgroundId.toString() === reward.itemId.toString()
+      );
+      
+      if (alreadyHasBg) {
+        user.gems = (user.gems || 0) + 100;
+        await user.save();
+        return {
+          type: 'gems',
+          amount: 100,
+          message: `You already have this background. Converted to 100 Gems!`
+        };
+      }
+      
+      user.achievements.profileBackgrounds.push({
+        backgroundId: reward.itemId,
+        unlockedAt: new Date(),
+        isEquipped: false
+      });
+      await user.save();
+      
+      // Increment total users for this background
+      await background.incrementTotalUsers();
+      
+      return {
+        type: 'profileBackground',
+        background: {
+          id: background._id,
+          name: background.name,
+          imageUrl: background.imageUrl,
+          thumbnailUrl: background.thumbnailUrl
+        },
+        message: `🖼️ Profile background "${background.name}" added to your collection!`
+      };
+
+    default:
+      throw new Error('Unknown reward type');
+  }
+}
+
+// ============================================================
+// ✅ GET SEASON LEADERBOARD
+// ============================================================
+exports.getSeasonLeaderboard = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+
+    const season = await SeasonPass.getActiveSeason();
+    if (!season) {
+      return res.json({
+        success: true,
+        hasActiveSeason: false,
+        message: 'No active season'
+      });
+    }
+
+    const leaderboard = await User.getSeasonPassLeaderboard(season._id, limit);
+
+    // Get user's rank
+    const userId = req.user._id;
+    let userRank = null;
+    
+    const allUsers = await User.find({
+      'seasonPass.seasonId': season._id
+    })
+    .select('username seasonPass.currentTier seasonPass.correctGuesses')
+    .sort({ 'seasonPass.currentTier': -1, 'seasonPass.correctGuesses': -1 });
+
+    const userIndex = allUsers.findIndex(u => u._id.toString() === userId.toString());
+    if (userIndex !== -1) {
+      userRank = userIndex + 1;
+    }
+
+    res.json({
+      success: true,
+      hasActiveSeason: true,
+      season: {
+        id: season._id,
+        seasonNumber: season.seasonNumber,
+        seasonName: season.seasonName,
+        totalTiers: season.totalTiers
+      },
+      leaderboard: leaderboard.map((user, index) => ({
+        rank: index + 1,
+        username: user.username,
+        currentTier: user.seasonPass.currentTier || 1,
+        correctGuesses: user.seasonPass.correctGuesses || 0,
+        isCompleted: user.seasonPass.isCompleted || false
+      })),
+      userRank: userRank,
+      totalPlayers: allUsers.length
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get leaderboard: ' + error.message
+    });
+  }
+};
+
+// ============================================================
+// ✅ GET SEASON HISTORY
+// ============================================================
+exports.getSeasonHistory = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Get all seasons the user has participated in
+    const seasons = await SeasonPass.find({
+      isPublished: true
+    }).sort({ seasonNumber: -1 });
+
+    const history = [];
+
+    for (const season of seasons) {
+      // Check if user has progress for this season
+      const userProgress = user.seasonPass;
+      if (userProgress && userProgress.seasonId && 
+          userProgress.seasonId.toString() === season._id.toString()) {
+        history.push({
+          seasonNumber: season.seasonNumber,
+          seasonName: season.seasonName,
+          currentTier: userProgress.currentTier || 1,
+          correctGuesses: userProgress.correctGuesses || 0,
+          isCompleted: userProgress.isCompleted || false,
+          completedAt: userProgress.completedAt || null,
+          joinedAt: userProgress.joinedAt || null,
+          totalTiers: season.totalTiers
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      history: history
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get season history: ' + error.message
+    });
+  }
+};

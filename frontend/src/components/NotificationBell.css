@@ -1,0 +1,91 @@
+/* Notification Nav Button - Similar to other nav items */
+.notification-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'gg sans', 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  height: 36px;
+  white-space: nowrap;
+}
+
+.notification-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.notification-nav-btn .nav-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.notification-nav-btn .nav-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.notification-nav-btn .nav-badge {
+  background: #ff6b6b;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 12px;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.notification-nav-btn .nav-badge.chest-badge {
+  background: #f59e0b;
+  font-size: 9px;
+  padding: 1px 6px;
+}
+
+/* Animation for new notifications */
+.notification-nav-btn.has-new {
+  animation: bell-shake 0.5s ease;
+}
+
+@keyframes bell-shake {
+  0%, 100% { transform: rotate(0); }
+  10%, 30%, 50%, 70%, 90% { transform: rotate(-5deg); }
+  20%, 40%, 60%, 80% { transform: rotate(5deg); }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .notification-nav-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    height: auto;
+    justify-content: center;
+    width: 100%;
+    border-radius: 999px;
+  }
+  
+  .notification-nav-btn .nav-icon {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .notification-nav-btn {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  
+  .notification-nav-btn .nav-icon {
+    font-size: 15px;
+  }
+}

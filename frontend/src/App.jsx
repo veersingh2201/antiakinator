@@ -1,0 +1,276 @@
+// /frontend/src/App.jsx
+import React, { useState, useEffect, useRef } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import Stars from './components/Stars';
+import InviteNotification from './components/InviteNotification';
+import io from 'socket.io-client';
+import Home from './pages/Home';
+import Game from './pages/Game';
+import TeamGamePage from './pages/TeamGamePage';
+import Matchmaking from './pages/Matchmaking';
+import MatchBattle from './pages/MatchBattle';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import VerifyOTP from './pages/VerifyOTP';
+import Profile from './pages/Profile';
+import PublicProfile from './pages/PublicProfile';
+import Leaderboard from './pages/Leaderboard';
+import SeasonWinners from './pages/SeasonWinners';
+import AdminPanel from './pages/AdminPanel';
+import BuyShards from './pages/BuyShards';
+import Shop from './pages/Shop';
+import ReferralPage from './pages/ReferralPage';
+import TwoFactorSetup from './pages/TwoFactorSetup';
+import TwoFactorVerify from './pages/TwoFactorVerify';
+import PrivateRoute from './components/PrivateRoute';
+import Collection from './pages/Collection';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
+import Refund from './pages/Refund';
+import Contact from './pages/Contact';
+import ClanPage from './pages/ClanPage';
+import WarPage from './components/clan/WarPage';
+import WarHistory from './pages/WarHistory';
+import WarLeaderboard from './pages/WarLeaderboard';
+import Notifications from './pages/Notifications';
+import SeasonPass from './pages/SeasonPass';
+
+// ✅ Blur Game
+import BlurGame from './pages/BlurGame';
+
+// ✅ Promotion Page
+import PromoteEarn from './pages/PromoteEarn';
+
+import './App.css';
+
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'instant'
+    });
+  }, [pathname]);
+
+  return null;
+};
+
+const AppContent = () => {
+  const { user, isAuthenticated } = useAuth();
+  const [invite, setInvite] = useState(null);
+  const socketRef = useRef(null);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      return;
+    }
+
+    const userId = user?._id || user?.id || user?.userId;
+
+    if (!userId) {
+      return;
+    }
+
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+    
+    const socket = io(socketUrl, {
+      withCredentials: true,
+      transports: ['websocket', 'polling']
+    });
+
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      socket.emit('register-user', { userId: userId });
+    });
+
+    socket.on('team-invite', (data) => {
+      setInvite({ ...data, type: 'team' });
+    });
+
+    socket.on('team-invite-global', (data) => {
+      if (data.targetUserId === userId) {
+        setInvite({ ...data, type: 'team' });
+      }
+    });
+
+    socket.on('match-invite', (data) => {
+      setInvite({ ...data, type: 'match' });
+    });
+
+    socket.on('match-invite-global', (data) => {
+      if (data.targetUserId === userId) {
+        setInvite({ ...data, type: 'match' });
+      }
+    });
+
+    socket.on('disconnect', () => {
+    });
+
+    socket.on('connect_error', (error) => {
+    });
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, [isAuthenticated, user]);
+
+  const handleInviteClose = () => {
+    setInvite(null);
+  };
+
+  return (
+    <>
+      <ScrollToTop />
+      <Navbar />
+      <Stars />
+      <main className="main-content">
+        <Routes>
+          {/* ===== PUBLIC ROUTES ===== */}
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/verify-otp" element={<VerifyOTP />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/season-winners" element={<SeasonWinners />} />
+          <Route path="/2fa-verify" element={<TwoFactorVerify />} />
+          
+          {/* ===== LEGAL PAGES ===== */}
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/refund" element={<Refund />} />
+          <Route path="/contact" element={<Contact />} />
+          
+          {/* ===== PRIVATE ROUTES ===== */}
+          <Route path="/game" element={
+            <PrivateRouteWrapper><Game /></PrivateRouteWrapper>
+          } />
+          
+          <Route path="/team-game/:roomCode" element={
+            <PrivateRouteWrapper><TeamGamePage /></PrivateRouteWrapper>
+          } />
+          
+          <Route path="/match" element={
+            <PrivateRouteWrapper><Matchmaking /></PrivateRouteWrapper>
+          } />
+          
+          <Route path="/match/battle/:matchCode" element={
+            <PrivateRouteWrapper><MatchBattle /></PrivateRouteWrapper>
+          } />
+          
+          <Route path="/collection" element={
+            <PrivateRouteWrapper><Collection /></PrivateRouteWrapper>
+          } />
+          
+          <Route path="/shop" element={
+            <PrivateRouteWrapper><Shop /></PrivateRouteWrapper>
+          } />
+          
+          <Route path="/referral" element={
+            <PrivateRouteWrapper><ReferralPage /></PrivateRouteWrapper>
+          } />
+          
+          <Route path="/profile" element={
+            <PrivateRouteWrapper><Profile /></PrivateRouteWrapper>
+          } />
+          
+          <Route path="/profile/:username" element={
+            <PrivateRouteWrapper><PublicProfile /></PrivateRouteWrapper>
+          } />
+          
+          <Route path="/2fa-setup" element={
+            <PrivateRouteWrapper><TwoFactorSetup /></PrivateRouteWrapper>
+          } />
+          
+          <Route path="/buy-shards" element={
+            <PrivateRouteWrapper><BuyShards /></PrivateRouteWrapper>
+          } />
+          
+          {/* ===== CLAN ROUTES ===== */}
+          <Route path="/clan" element={
+            <PrivateRouteWrapper><ClanPage /></PrivateRouteWrapper>
+          } />
+          
+          {/* ===== CLAN WAR ROUTES ===== */}
+          <Route path="/clan/war" element={
+            <PrivateRouteWrapper><WarPage /></PrivateRouteWrapper>
+          } />
+          
+          <Route path="/clan/war/history" element={
+            <PrivateRouteWrapper><WarHistory /></PrivateRouteWrapper>
+          } />
+          
+          <Route path="/clan/war/leaderboard" element={
+            <PrivateRouteWrapper><WarLeaderboard /></PrivateRouteWrapper>
+          } />
+          
+          {/* ===== NOTIFICATIONS ROUTE ===== */}
+          <Route path="/notifications" element={
+            <PrivateRouteWrapper><Notifications /></PrivateRouteWrapper>
+          } />
+          
+          {/* ===== SEASON PASS ROUTE ===== */}
+          <Route path="/season-pass" element={
+            <PrivateRouteWrapper><SeasonPass /></PrivateRouteWrapper>
+          } />
+          
+          {/* ===== BLUR GAME ROUTE ===== */}
+          <Route path="/blur-game" element={
+            <PrivateRouteWrapper><BlurGame /></PrivateRouteWrapper>
+          } />
+          
+          {/* ===== PROMOTE & EARN ROUTE ===== */}
+          <Route path="/promote-earn" element={
+            <PrivateRouteWrapper><PromoteEarn /></PrivateRouteWrapper>
+          } />
+          
+          {/* ===== ADMIN ROUTE ===== */}
+          <Route path="/admin" element={
+            <AdminRouteWrapper><AdminPanel /></AdminRouteWrapper>
+          } />
+        </Routes>
+      </main>
+      <Footer />
+      
+      {invite && (
+        <InviteNotification 
+          invite={invite} 
+          onClose={handleInviteClose} 
+        />
+      )}
+    </>
+  );
+};
+
+const PrivateRouteWrapper = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return <div className="loading-container">Loading...</div>;
+  return isAuthenticated ? children : <Navigate to="/login" />;
+};
+
+const AdminRouteWrapper = ({ children }) => {
+  const { isAuthenticated, user, loading } = useAuth();
+  if (loading) return <div className="loading-container">Loading...</div>;
+  if (!isAuthenticated) return <Navigate to="/login" />;
+  if (user?.role !== 'admin') return <Navigate to="/" />;
+  return children;
+};
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
+
+export default App;

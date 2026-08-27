@@ -1,0 +1,1349 @@
+/* /frontend/src/components/PaymentQRModal.css */
+
+/* ============================================================ */
+/* OVERLAY - Full viewport, no scroll */
+/* ============================================================ */
+.payment-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  padding: 16px;
+  animation: fadeIn 0.3s ease;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+/* ============================================================ */
+/* MODAL - Perfectly centered */
+/* ============================================================ */
+.payment-modal {
+  background: #16213e;
+  border-radius: 24px;
+  max-width: 440px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+  animation: slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin: auto;
+  position: relative;
+}
+
+/* Scrollbar */
+.payment-modal::-webkit-scrollbar {
+  width: 4px;
+}
+
+.payment-modal::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.payment-modal::-webkit-scrollbar-thumb {
+  background: rgba(108, 99, 255, 0.4);
+  border-radius: 10px;
+}
+
+.payment-modal::-webkit-scrollbar-thumb:hover {
+  background: rgba(108, 99, 255, 0.6);
+}
+
+/* ============================================================ */
+/* HEADER */
+/* ============================================================ */
+.payment-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  position: sticky;
+  top: 0;
+  background: #16213e;
+  z-index: 10;
+  border-radius: 24px 24px 0 0;
+}
+
+.payment-modal-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.payment-modal-close {
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: #94a3b8;
+  border-radius: 10px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+}
+
+.payment-modal-close:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.payment-modal-close:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.payment-modal-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ============================================================ */
+/* BODY */
+/* ============================================================ */
+.payment-modal-body {
+  padding: 22px;
+  color: #e5e7eb;
+}
+
+/* ============================================================ */
+/* TRUST BADGE */
+/* ============================================================ */
+.trust-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.12);
+  border-radius: 20px;
+  font-size: 11px;
+  color: #6ee7b7;
+  font-weight: 500;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.trust-badge svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.trust-badge .trust-dot {
+  color: #4b5563;
+  font-size: 8px;
+}
+
+/* ============================================================ */
+/* STEP INDICATOR */
+/* ============================================================ */
+.step-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  width: 100%;
+  max-width: 200px;
+  margin: 0 auto;
+}
+
+.step-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.06);
+  color: #4b5563;
+  border: 2px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.step-dot.active {
+  background: #6c63ff;
+  color: #ffffff;
+  border-color: #6c63ff;
+  box-shadow: 0 0 20px rgba(108, 99, 255, 0.3);
+}
+
+.step-dot.done {
+  background: #10b981;
+  color: #ffffff;
+  border-color: #10b981;
+  font-size: 10px;
+}
+
+.step-line {
+  flex: 1;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 0 4px;
+  transition: all 0.3s ease;
+  max-width: 40px;
+}
+
+.step-line.done {
+  background: #10b981;
+}
+
+.step-labels {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 200px;
+  margin: 4px auto 0;
+}
+
+.step-label {
+  font-size: 9px;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.step-label.active {
+  color: #6c63ff;
+}
+
+.step-label.done {
+  color: #10b981;
+}
+
+/* ============================================================ */
+/* INSTRUCTIONS BOX */
+/* ============================================================ */
+.instructions-box {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.instruction-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #d1d5db;
+}
+
+.instruction-number {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(108, 99, 255, 0.12);
+  color: #6c63ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.instruction-text {
+  line-height: 1.4;
+}
+
+.instruction-text strong {
+  color: #ffffff;
+}
+
+/* ============================================================ */
+/* TRUST MESSAGE */
+/* ============================================================ */
+.trust-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.08);
+  border-radius: 8px;
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.5;
+  width: 100%;
+}
+
+.trust-message svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #f59e0b;
+}
+
+.trust-message strong {
+  color: #fbbf24;
+}
+
+.trust-message.small {
+  padding: 8px 12px;
+  font-size: 11px;
+}
+
+.trust-message.small svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ============================================================ */
+/* FORM INSTRUCTION */
+/* ============================================================ */
+.form-instruction {
+  padding: 8px 14px;
+  background: rgba(108, 99, 255, 0.06);
+  border: 1px solid rgba(108, 99, 255, 0.08);
+  border-radius: 8px;
+  font-size: 13px;
+  color: #94a3b8;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ============================================================ */
+/* QR STEP */
+/* ============================================================ */
+.qr-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.item-info {
+  text-align: center;
+  width: 100%;
+  padding: 2px 0;
+}
+
+.item-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: #94a3b8;
+  margin: 0 0 4px 0;
+}
+
+.item-amount {
+  font-size: 36px;
+  font-weight: 800;
+  color: #6c63ff;
+  margin: 0;
+  letter-spacing: -1px;
+}
+
+.item-amount::before {
+  content: '₹';
+  font-size: 24px;
+  font-weight: 600;
+  margin-right: 2px;
+  color: #6c63ff;
+}
+
+/* QR Container */
+.qr-container {
+  background: #ffffff;
+  padding: 16px;
+  border-radius: 16px;
+  border: 2px solid rgba(108, 99, 255, 0.15);
+  width: 100%;
+  max-width: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.qr-container:hover {
+  border-color: rgba(108, 99, 255, 0.35);
+  box-shadow: 0 0 30px rgba(108, 99, 255, 0.1);
+}
+
+.qr-image {
+  width: 100%;
+  height: auto;
+  max-width: 168px;
+  display: block;
+  border-radius: 8px;
+}
+
+/* UPI Details */
+.upi-details {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.upi-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin: 0 0 4px 0;
+}
+
+.upi-id-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.upi-id {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f1f5f9;
+  font-family: 'Monaco', 'Menlo', monospace;
+  word-break: break-all;
+  letter-spacing: 0.3px;
+}
+
+.copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: rgba(108, 99, 255, 0.12);
+  border: 1px solid rgba(108, 99, 255, 0.15);
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #6c63ff;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.copy-btn:hover {
+  background: rgba(108, 99, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.copy-btn:active {
+  transform: scale(0.95);
+}
+
+.copy-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.upi-hint {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 6px 0 0 0;
+  text-align: center;
+}
+
+/* Buttons in QR Step */
+.qr-step .btn-primary {
+  margin-top: 2px;
+}
+
+/* ============================================================ */
+/* FORM STEP */
+/* ============================================================ */
+.form-step {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 0;
+  width: fit-content;
+  transition: all 0.2s;
+}
+
+.back-btn:hover {
+  color: #ffffff;
+}
+
+.back-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Order Summary */
+.order-summary {
+  background: rgba(255, 255, 255, 0.04);
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  font-size: 14px;
+  color: #d1d5db;
+}
+
+.summary-row:not(:last-child) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.summary-label {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.summary-value {
+  font-weight: 500;
+  color: #f1f5f9;
+}
+
+.summary-value.highlight {
+  color: #6c63ff;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.summary-value.status-pending {
+  color: #f59e0b;
+  font-weight: 600;
+  font-size: 11px;
+  background: rgba(245, 158, 11, 0.12);
+  padding: 3px 12px;
+  border-radius: 20px;
+  display: inline-block;
+  border: 1px solid rgba(245, 158, 11, 0.15);
+}
+
+/* Form Groups */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.form-label .required {
+  color: #ef4444;
+  margin-left: 2px;
+}
+
+.form-input {
+  padding: 11px 14px;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  font-size: 14px;
+  transition: all 0.25s;
+  outline: none;
+  font-family: inherit;
+  background: rgba(255, 255, 255, 0.04);
+  color: #f1f5f9;
+}
+
+.form-input::placeholder {
+  color: #64748b;
+}
+
+.form-input:focus {
+  border-color: #6c63ff;
+  box-shadow: 0 0 0 4px rgba(108, 99, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.form-input.error {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.06);
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.08);
+}
+
+.form-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Remove number input arrows */
+.form-input::-webkit-outer-spin-button,
+.form-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.form-input[type=number] {
+  -moz-appearance: textfield;
+}
+
+.input-hint {
+  font-size: 11px;
+  color: #64748b;
+  margin: 2px 0 0 0;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #f87171;
+  margin-top: 2px;
+}
+
+.error-message svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* Error & Success Boxes */
+.error-box,
+.success-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.error-box {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+.success-box {
+  background: rgba(16, 185, 129, 0.1);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.15);
+}
+
+.error-box svg,
+.success-box svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+/* Buttons */
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 20px;
+  background: linear-gradient(135deg, #6c63ff, #5a52d5);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(108, 99, 255, 0.35);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.btn-primary svg {
+  width: 18px;
+  height: 18px;
+}
+
+.btn-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 13px 20px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #d1d5db;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Spinner */
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  border-top-color: #ffffff;
+  animation: spin 0.7s linear infinite;
+}
+
+/* Form Footer */
+.form-footer {
+  font-size: 12px;
+  color: #64748b;
+  text-align: center;
+  margin: 2px 0 0 0;
+  line-height: 1.6;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* ============================================================ */
+/* ANIMATIONS */
+/* ============================================================ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================ */
+/* FIX: Lock body scroll when modal is open */
+/* ============================================================ */
+body.modal-open {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+}
+
+/* ============================================================ */
+/* RESPONSIVE - TABLETS & SMALL DESKTOP */
+/* ============================================================ */
+@media (max-width: 768px) {
+  .payment-modal {
+    max-width: 95%;
+    border-radius: 18px;
+    margin: auto;
+    max-height: 92vh;
+  }
+  
+  .payment-modal-header {
+    padding: 16px 18px;
+  }
+  
+  .payment-modal-title {
+    font-size: 18px;
+  }
+  
+  .payment-modal-body {
+    padding: 18px;
+  }
+  
+  .item-amount {
+    font-size: 32px;
+  }
+  
+  .item-amount::before {
+    font-size: 22px;
+  }
+  
+  .qr-container {
+    max-width: 180px;
+    padding: 14px;
+  }
+  
+  .qr-image {
+    max-width: 152px;
+  }
+  
+  .upi-id {
+    font-size: 14px;
+  }
+  
+  .step-dot {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
+  
+  .instruction-step {
+    font-size: 12px;
+  }
+}
+
+/* ============================================================ */
+/* RESPONSIVE - MOBILE PHONES */
+/* ============================================================ */
+@media (max-width: 480px) {
+  .payment-modal-overlay {
+    padding: 8px;
+  }
+  
+  .payment-modal {
+    border-radius: 16px;
+    margin: auto;
+    max-height: 96vh;
+    max-width: 100%;
+  }
+  
+  .payment-modal-header {
+    padding: 14px 16px;
+    border-radius: 16px 16px 0 0;
+  }
+  
+  .payment-modal-title {
+    font-size: 16px;
+  }
+  
+  .payment-modal-close {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .payment-modal-close svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .payment-modal-body {
+    padding: 14px;
+  }
+  
+  .item-name {
+    font-size: 13px;
+  }
+  
+  .item-amount {
+    font-size: 28px;
+  }
+  
+  .item-amount::before {
+    font-size: 18px;
+  }
+  
+  .qr-container {
+    max-width: 160px;
+    padding: 12px;
+    border-radius: 12px;
+  }
+  
+  .qr-image {
+    max-width: 136px;
+  }
+  
+  .upi-details {
+    padding: 10px 14px;
+  }
+  
+  .upi-id {
+    font-size: 13px;
+  }
+  
+  .copy-btn {
+    font-size: 10px;
+    padding: 4px 10px;
+  }
+  
+  .copy-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .upi-hint {
+    font-size: 11px;
+  }
+  
+  .qr-step {
+    gap: 14px;
+  }
+  
+  .form-step {
+    gap: 14px;
+  }
+  
+  .form-actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    padding: 12px 16px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
+  
+  .btn-primary svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .btn-secondary {
+    border-width: 1.5px;
+  }
+  
+  .order-summary {
+    padding: 12px 14px;
+  }
+  
+  .summary-row {
+    font-size: 13px;
+    padding: 4px 0;
+  }
+  
+  .summary-value.highlight {
+    font-size: 16px;
+  }
+  
+  .summary-value.status-pending {
+    font-size: 10px;
+    padding: 2px 10px;
+  }
+  
+  .form-label {
+    font-size: 13px;
+  }
+  
+  .form-input {
+    padding: 10px 12px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+  
+  .input-hint {
+    font-size: 10px;
+  }
+  
+  .error-message {
+    font-size: 12px;
+  }
+  
+  .error-box,
+  .success-box {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+  
+  .error-box svg,
+  .success-box svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .form-footer {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+  
+  .back-btn {
+    font-size: 12px;
+  }
+  
+  .back-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .spinner {
+    width: 18px;
+    height: 18px;
+    border-width: 2px;
+  }
+  
+  /* Trust Badge Mobile */
+  .trust-badge {
+    font-size: 10px;
+    padding: 4px 12px;
+    gap: 6px;
+  }
+  
+  .trust-badge svg {
+    width: 12px;
+    height: 12px;
+  }
+  
+  /* Step Indicator Mobile */
+  .step-dot {
+    width: 22px;
+    height: 22px;
+    font-size: 9px;
+  }
+  
+  .step-label {
+    font-size: 8px;
+  }
+  
+  .step-line {
+    max-width: 30px;
+  }
+  
+  .step-indicator {
+    max-width: 160px;
+  }
+  
+  .step-labels {
+    max-width: 160px;
+  }
+  
+  /* Instructions Mobile */
+  .instructions-box {
+    padding: 10px 12px;
+  }
+  
+  .instruction-step {
+    font-size: 12px;
+    gap: 8px;
+  }
+  
+  .instruction-number {
+    width: 18px;
+    height: 18px;
+    font-size: 9px;
+  }
+  
+  /* Trust Message Mobile */
+  .trust-message {
+    font-size: 11px;
+    padding: 8px 12px;
+  }
+  
+  .trust-message svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .trust-message.small {
+    font-size: 10px;
+    padding: 6px 10px;
+  }
+  
+  /* Form Instruction Mobile */
+  .form-instruction {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+}
+
+/* ============================================================ */
+/* RESPONSIVE - VERY SMALL PHONES (under 360px) */
+/* ============================================================ */
+@media (max-width: 360px) {
+  .payment-modal-overlay {
+    padding: 4px;
+  }
+  
+  .payment-modal {
+    border-radius: 12px;
+    max-height: 98vh;
+  }
+  
+  .payment-modal-header {
+    padding: 10px 12px;
+  }
+  
+  .payment-modal-title {
+    font-size: 14px;
+  }
+  
+  .payment-modal-body {
+    padding: 10px;
+  }
+  
+  .item-name {
+    font-size: 12px;
+  }
+  
+  .item-amount {
+    font-size: 24px;
+  }
+  
+  .item-amount::before {
+    font-size: 16px;
+  }
+  
+  .qr-container {
+    max-width: 140px;
+    padding: 10px;
+  }
+  
+  .qr-image {
+    max-width: 120px;
+  }
+  
+  .upi-id {
+    font-size: 11px;
+  }
+  
+  .copy-btn {
+    font-size: 9px;
+    padding: 3px 8px;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  
+  .order-summary {
+    padding: 10px 12px;
+  }
+  
+  .summary-row {
+    font-size: 12px;
+  }
+  
+  .summary-value.highlight {
+    font-size: 14px;
+  }
+  
+  .form-input {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  
+  .form-label {
+    font-size: 12px;
+  }
+  
+  .step-dot {
+    width: 20px;
+    height: 20px;
+    font-size: 8px;
+  }
+  
+  .step-label {
+    font-size: 7px;
+  }
+  
+  .step-indicator {
+    max-width: 140px;
+  }
+  
+  .step-labels {
+    max-width: 140px;
+  }
+  
+  .step-line {
+    max-width: 24px;
+  }
+  
+  .instruction-step {
+    font-size: 11px;
+  }
+  
+  .instruction-number {
+    width: 16px;
+    height: 16px;
+    font-size: 8px;
+  }
+  
+  .trust-badge {
+    font-size: 9px;
+    padding: 3px 10px;
+  }
+}
+
+/* ============================================================ */
+/* DARK MODE OVERRIDES (for systems with dark mode) */
+/* ============================================================ */
+@media (prefers-color-scheme: dark) {
+  .payment-modal {
+    background: #0f172a;
+    border-color: rgba(255, 255, 255, 0.06);
+  }
+  
+  .payment-modal-header {
+    background: #0f172a;
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  .payment-modal-title {
+    color: #f1f5f9;
+  }
+  
+  .payment-modal-close {
+    color: #64748b;
+  }
+  
+  .payment-modal-close:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    color: #f1f5f9;
+  }
+  
+  .item-name {
+    color: #94a3b8;
+  }
+  
+  .upi-details {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  .upi-id {
+    color: #e2e8f0;
+  }
+  
+  .order-summary {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  .summary-row {
+    color: #cbd5e1;
+  }
+  
+  .summary-value {
+    color: #e2e8f0;
+  }
+  
+  .form-input {
+    background: rgba(255, 255, 255, 0.03);
+    color: #e2e8f0;
+  }
+  
+  .form-input:focus {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  .btn-secondary {
+    background: rgba(255, 255, 255, 0.03);
+    color: #cbd5e1;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  
+  .btn-secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.06);
+  }
+  
+  .form-footer {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.04);
+    color: #94a3b8;
+  }
+  
+  .instructions-box {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.04);
+  }
+  
+  .trust-message {
+    background: rgba(245, 158, 11, 0.04);
+    border-color: rgba(245, 158, 11, 0.06);
+  }
+  
+  .form-instruction {
+    background: rgba(108, 99, 255, 0.04);
+    border-color: rgba(108, 99, 255, 0.06);
+  }
+}
+
+/* ============================================================ */
+/* SAFARI/TOUCH DEVICES FIXES */
+/* ============================================================ */
+@supports (-webkit-touch-callout: none) {
+  .payment-modal-overlay {
+    /* Fix for Safari on iOS */
+    height: -webkit-fill-available;
+  }
+  
+  .payment-modal {
+    /* Fix for Safari on iOS */
+    max-height: 85vh;
+  }
+}
+
+/* ============================================================ */
+/* FIX: Prevent zoom on input focus for mobile */
+/* ============================================================ */
+@media (max-width: 480px) {
+  .form-input {
+    font-size: 16px !important;
+  }
+}

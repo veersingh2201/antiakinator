@@ -1,0 +1,56 @@
+const mongoose = require('mongoose');
+
+const gameSessionSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  character: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Character',
+    required: true
+  },
+  // ✅ NEW: Store selected anime for this game session
+  anime: {
+    type: String,
+    default: null
+  },
+  questions: [{
+    question: String,
+    answer: String,
+    confidence: Number,
+    timestamp: { type: Date, default: Date.now }
+  }],
+  status: {
+    type: String,
+    enum: ['active', 'won', 'lost', 'abandoned'],
+    default: 'active'
+  },
+  totalQuestions: {
+    type: Number,
+    default: 0
+  },
+  guesses: [{
+    guess: String,
+    isCorrect: Boolean,
+    timestamp: { type: Date, default: Date.now }
+  }],
+  hintUsed: {
+    type: Boolean,
+    default: false
+  },
+  startedAt: {
+    type: Date,
+    default: Date.now
+  },
+  endedAt: {
+    type: Date
+  }
+});
+
+// ✅ Index for faster queries
+gameSessionSchema.index({ user: 1, status: 1 });
+gameSessionSchema.index({ character: 1 });
+
+module.exports = mongoose.model('GameSession', gameSessionSchema);
