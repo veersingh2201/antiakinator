@@ -76,8 +76,8 @@ const AppContent = () => {
       return;
     }
 
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
-    const socket = io(import.meta.env.VITE_API_URL || 'https://antiakinator.onrender.com');
+    // ✅ FIX: Use the same URL for socket connections
+    const socketUrl = import.meta.env.VITE_API_URL || 'https://antiakinator.onrender.com';
     const socket = io(socketUrl, {
       withCredentials: true,
       transports: ['websocket', 'polling']
@@ -86,6 +86,7 @@ const AppContent = () => {
     socketRef.current = socket;
 
     socket.on('connect', () => {
+      console.log('🔌 Socket connected successfully');
       socket.emit('register-user', { userId: userId });
     });
 
@@ -110,9 +111,11 @@ const AppContent = () => {
     });
 
     socket.on('disconnect', () => {
+      console.log('🔌 Socket disconnected');
     });
 
     socket.on('connect_error', (error) => {
+      console.error('❌ Socket connection error:', error);
     });
 
     return () => {
