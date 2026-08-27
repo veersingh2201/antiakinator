@@ -77,7 +77,7 @@ const AppContent = () => {
     }
 
     const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
-    
+    const socket = io(import.meta.env.VITE_API_URL || 'https://antiakinator.onrender.com');
     const socket = io(socketUrl, {
       withCredentials: true,
       transports: ['websocket', 'polling']
