@@ -76,14 +76,15 @@ const AppContent = () => {
       return;
     }
 
-    // ✅ FIX 1: Get the base URL without trailing slashes
-    const baseUrl = import.meta.env.VITE_API_URL || 'https://antiakinator.onrender.com';
-    // Remove trailing slash if exists
-    const socketUrl = baseUrl.replace(/\/$/, '');
-    
+    // ✅ FIX: Build socket URL from the API URL but STRIP the "/api" suffix.
+    // Socket.IO treats anything after the host as a NAMESPACE, not a path.
+    // Reusing "https://antiakinator.onrender.com/api" as-is causes
+    // "Invalid namespace" errors because there's no "/api" namespace on the server.
+    const rawApiUrl = import.meta.env.VITE_API_URL || 'https://antiakinator.onrender.com/api';
+    const socketUrl = rawApiUrl.replace(/\/api\/?$/, '').replace(/\/$/, '');
+
     console.log('🔌 Connecting to socket at:', socketUrl);
 
-    // ✅ FIX 2: Better socket configuration
     const socket = io(socketUrl, {
       path: '/socket.io',
       transports: ['websocket', 'polling'],
@@ -93,7 +94,6 @@ const AppContent = () => {
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       timeout: 20000,
-      // ✅ Fix for "Invalid namespace" error
       forceNew: true,
       multiplex: false
     });
@@ -167,96 +167,96 @@ const AppContent = () => {
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/season-winners" element={<SeasonWinners />} />
           <Route path="/2fa-verify" element={<TwoFactorVerify />} />
-          
+
           {/* ===== LEGAL PAGES ===== */}
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/refund" element={<Refund />} />
           <Route path="/contact" element={<Contact />} />
-          
+
           {/* ===== PRIVATE ROUTES ===== */}
           <Route path="/game" element={
             <PrivateRouteWrapper><Game /></PrivateRouteWrapper>
           } />
-          
+
           <Route path="/team-game/:roomCode" element={
             <PrivateRouteWrapper><TeamGamePage /></PrivateRouteWrapper>
           } />
-          
+
           <Route path="/match" element={
             <PrivateRouteWrapper><Matchmaking /></PrivateRouteWrapper>
           } />
-          
+
           <Route path="/match/battle/:matchCode" element={
             <PrivateRouteWrapper><MatchBattle /></PrivateRouteWrapper>
           } />
-          
+
           <Route path="/collection" element={
             <PrivateRouteWrapper><Collection /></PrivateRouteWrapper>
           } />
-          
+
           <Route path="/shop" element={
             <PrivateRouteWrapper><Shop /></PrivateRouteWrapper>
           } />
-          
+
           <Route path="/referral" element={
             <PrivateRouteWrapper><ReferralPage /></PrivateRouteWrapper>
           } />
-          
+
           <Route path="/profile" element={
             <PrivateRouteWrapper><Profile /></PrivateRouteWrapper>
           } />
-          
+
           <Route path="/profile/:username" element={
             <PrivateRouteWrapper><PublicProfile /></PrivateRouteWrapper>
           } />
-          
+
           <Route path="/2fa-setup" element={
             <PrivateRouteWrapper><TwoFactorSetup /></PrivateRouteWrapper>
           } />
-          
+
           <Route path="/buy-shards" element={
             <PrivateRouteWrapper><BuyShards /></PrivateRouteWrapper>
           } />
-          
+
           {/* ===== CLAN ROUTES ===== */}
           <Route path="/clan" element={
             <PrivateRouteWrapper><ClanPage /></PrivateRouteWrapper>
           } />
-          
+
           {/* ===== CLAN WAR ROUTES ===== */}
           <Route path="/clan/war" element={
             <PrivateRouteWrapper><WarPage /></PrivateRouteWrapper>
           } />
-          
+
           <Route path="/clan/war/history" element={
             <PrivateRouteWrapper><WarHistory /></PrivateRouteWrapper>
           } />
-          
+
           <Route path="/clan/war/leaderboard" element={
             <PrivateRouteWrapper><WarLeaderboard /></PrivateRouteWrapper>
           } />
-          
+
           {/* ===== NOTIFICATIONS ROUTE ===== */}
           <Route path="/notifications" element={
             <PrivateRouteWrapper><Notifications /></PrivateRouteWrapper>
           } />
-          
+
           {/* ===== SEASON PASS ROUTE ===== */}
           <Route path="/season-pass" element={
             <PrivateRouteWrapper><SeasonPass /></PrivateRouteWrapper>
           } />
-          
+
           {/* ===== BLUR GAME ROUTE ===== */}
           <Route path="/blur-game" element={
             <PrivateRouteWrapper><BlurGame /></PrivateRouteWrapper>
           } />
-          
+
           {/* ===== PROMOTE & EARN ROUTE ===== */}
           <Route path="/promote-earn" element={
             <PrivateRouteWrapper><PromoteEarn /></PrivateRouteWrapper>
           } />
-          
+
           {/* ===== ADMIN ROUTE ===== */}
           <Route path="/admin" element={
             <AdminRouteWrapper><AdminPanel /></AdminRouteWrapper>
@@ -264,11 +264,11 @@ const AppContent = () => {
         </Routes>
       </main>
       <Footer />
-      
+
       {invite && (
-        <InviteNotification 
-          invite={invite} 
-          onClose={handleInviteClose} 
+        <InviteNotification
+          invite={invite}
+          onClose={handleInviteClose}
         />
       )}
     </>

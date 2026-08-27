@@ -10,6 +10,7 @@ const SeasonPass = require('../models/SeasonPass');
 const { checkAndUnlockAchievements, unlockProfilePhoto } = require('../utils/achievementUtils');
 const { getCurrentSeason } = require('../utils/seasonUtils');
 const { askAI } = require('../utils/aiRouter');
+const { authMiddleware } = require('../middleware/auth'); // ✅ ADD THIS
 const router = express.Router();
 
 // ============================================================
@@ -333,10 +334,12 @@ const validateGuess = [
 ];
 
 // ============================================================
-// GET ANIME OPTIONS (4 random anime)
+// ✅ FIX: GET ANIME OPTIONS - Added authMiddleware
 // ============================================================
-router.get('/anime-options', async (req, res) => {
+router.get('/anime-options', authMiddleware, async (req, res) => {
   try {
+    console.log('🎯 Fetching anime options for user:', req.user?._id);
+    
     const allAnime = await Character.distinct('anime');
     
     if (!allAnime || allAnime.length === 0) {
@@ -364,6 +367,7 @@ router.get('/anime-options', async (req, res) => {
     });
 
   } catch (error) {
+    console.error('❌ Error fetching anime options:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get anime options'
@@ -374,7 +378,7 @@ router.get('/anime-options', async (req, res) => {
 // ============================================================
 // START GAME WITH SELECTED ANIME
 // ============================================================
-router.post('/start', async (req, res) => {
+router.post('/start', authMiddleware, async (req, res) => {
   try {
     const { anime } = req.body;
 
@@ -434,6 +438,7 @@ router.post('/start', async (req, res) => {
     });
 
   } catch (error) {
+    console.error('❌ Error starting game:', error);
     res.status(500).json({
       success: false,
       message: 'Error starting game. Please try again.'
@@ -444,7 +449,7 @@ router.post('/start', async (req, res) => {
 // ============================================================
 // ASK QUESTION (COMPLETE DATA - NO RESTRICTION)
 // ============================================================
-router.post('/question', [...validateGameId, ...validateQuestion], async (req, res) => {
+router.post('/question', authMiddleware, [...validateGameId, ...validateQuestion], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -724,6 +729,7 @@ YOU WILL BE TESTED. ANY MISTAKE = GAME OVER. THINK. READ EVERYTHING. PROTECT IDE
       answer = result.answer || 'IDK';
       usedProvider = result.provider || 'none';
     } catch (error) {
+      console.error('❌ AI service error:', error);
       return res.status(503).json({
         success: false,
         message: 'AI service temporarily unavailable. Please try again.'
@@ -797,6 +803,7 @@ YOU WILL BE TESTED. ANY MISTAKE = GAME OVER. THINK. READ EVERYTHING. PROTECT IDE
     });
 
   } catch (error) {
+    console.error('❌ Error processing question:', error);
     res.status(500).json({
       success: false,
       message: 'Error processing question. Please try again.'
@@ -807,7 +814,7 @@ YOU WILL BE TESTED. ANY MISTAKE = GAME OVER. THINK. READ EVERYTHING. PROTECT IDE
 // ============================================================
 // USE HINT
 // ============================================================
-router.post('/hint', validateGameId, async (req, res) => {
+router.post('/hint', authMiddleware, validateGameId, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -876,6 +883,7 @@ router.post('/hint', validateGameId, async (req, res) => {
     });
 
   } catch (error) {
+    console.error('❌ Error using hint:', error);
     res.status(500).json({
       success: false,
       message: 'Error using hint. Please try again.'
@@ -886,7 +894,7 @@ router.post('/hint', validateGameId, async (req, res) => {
 // ============================================================
 // MAKE GUESS
 // ============================================================
-router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) => {
+router.post('/guess', authMiddleware, [...validateGameId, ...validateGuess], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -899,7 +907,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
 
     const { gameId, guess } = req.body;
     const sanitizedGuess = sanitizeInput(guess);
-
 
     const game = await GameSession.findById(gameId).populate('character');
 
@@ -995,10 +1002,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
       const character = game.character;
       const cardAdded = user.addCard(character);
       
-      if (cardAdded) {
-      } else {
-      }
-
       // ============================================================
       // ✅ SEASON PASS PROGRESS
       // ============================================================
@@ -1069,7 +1072,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
             referral.firstWinAt = new Date();
             referral.completedAt = new Date();
             await referral.save();
-
           }
         }
       }
@@ -1124,7 +1126,6 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
           }
         });
 
-
         return res.json({
           success: true,
           isCorrect: false,
@@ -1147,6 +1148,7 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
     }
 
   } catch (error) {
+    console.error('❌ Error processing guess:', error);
     res.status(500).json({
       success: false,
       message: 'Error processing guess. Please try again.'
@@ -1157,7 +1159,7 @@ router.post('/guess', [...validateGameId, ...validateGuess], async (req, res) =>
 // ============================================================
 // GIVE UP
 // ============================================================
-router.post('/giveup', validateGameId, async (req, res) => {
+router.post('/giveup', authMiddleware, validateGameId, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -1169,7 +1171,6 @@ router.post('/giveup', validateGameId, async (req, res) => {
     }
 
     const { gameId } = req.body;
-
 
     const game = await GameSession.findById(gameId).populate('character');
 
@@ -1188,6 +1189,10 @@ router.post('/giveup', validateGameId, async (req, res) => {
     }
 
     if (game.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized'
+      });
     }
 
     game.status = 'abandoned';
@@ -1219,6 +1224,7 @@ router.post('/giveup', validateGameId, async (req, res) => {
     });
 
   } catch (error) {
+    console.error('❌ Error giving up:', error);
     res.status(500).json({
       success: false,
       message: 'Error giving up. Please try again.'
@@ -1229,7 +1235,7 @@ router.post('/giveup', validateGameId, async (req, res) => {
 // ============================================================
 // GET HISTORY
 // ============================================================
-router.get('/history', async (req, res) => {
+router.get('/history', authMiddleware, async (req, res) => {
   try {
     const games = await GameSession.find({ user: req.user._id })
       .populate('character', 'name anime image powerLevel')
@@ -1252,6 +1258,7 @@ router.get('/history', async (req, res) => {
       games: sanitizedGames
     });
   } catch (error) {
+    console.error('❌ Error fetching history:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching history. Please try again.'

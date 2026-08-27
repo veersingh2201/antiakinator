@@ -1,3 +1,4 @@
+// backend/routes/clan.js
 const express = require('express');
 const router = express.Router();
 
@@ -32,6 +33,7 @@ let io;
 
 const setIO = (ioInstance) => {
   io = ioInstance;
+  console.log('🛡️ Socket.io instance set in clan routes');
 };
 
 // ============================================================
@@ -89,5 +91,19 @@ router.get('/:clanId/war-cards', authMiddleware, getClanWarCards);
 // ============================================================
 // ✅ EXPORT: Router as main export with setIO attached
 // ============================================================
+
+// ✅ FIX: Use exports instead of module.exports for cleaner code
+// Option A: Keep current approach (works)
 module.exports = router;
 module.exports.setIO = setIO;
+
+// Option B: Alternative approach (also works)
+// const clanRouter = router;
+// clanRouter.setIO = setIO;
+// module.exports = clanRouter;
+
+console.log('🛡️ Clan routes loaded successfully!');
+console.log('   - /create, /join, /leave, /list, /my-clan');
+console.log('   - /members/:clanId, /chat/:clanId, /donate, /request');
+console.log('   - /transfer-leadership, /kick');
+console.log('   - /select-war-card, /war-card, /:clanId/war-cards');
